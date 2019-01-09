@@ -1,11 +1,13 @@
+#![feature(int_to_from_bytes)]
+
 #[macro_use]
 extern crate serde_derive;
 #[macro_use]
 extern crate serde_json;
 #[macro_use]
 extern crate quick_error;
-extern crate rand_core;
-extern crate rand_xorshift;
+
+extern crate rand;
 
 extern crate game_engine;
 #[macro_use]
@@ -15,8 +17,7 @@ use serde_json::Value;
 use std::error::Error;
 use game_engine::{*, Game as InnerGame};
 use game_engine_derive::{flow, moves};
-use rand_core::SeedableRng;
-use rand_xorshift::XorShiftRng;
+use rand::{Rng, SeedableRng, ChaChaRng};
 
 /// Error types.
 quick_error! {
@@ -33,7 +34,8 @@ quick_error! {
 /// State types and enums.
 
 // A ship's ID is its index in this array, and its length is the value at that index.
-static SHIPS: [u8; 7] = [1, 1, 2, 2, 3, 4, 5];
+static SHIPS: [i8; 10] = [2, 2, 2, 2, 3, 3, 3, 4, 4, 6];
+const BOARD_SIZE: usize = 10;
 #[derive(Serialize, Deserialize, Clone, Debug, Copy)]
 pub enum Tile {
     Water,
@@ -42,17 +44,17 @@ pub enum Tile {
     Miss
 }
 
-pub type Board = [[Tile; 10]; 10];
+pub type Board = [[Tile; BOARD_SIZE]; BOARD_SIZE];
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct State {
-    pub boards: [Board; 2],
-    pub hits_left: [[u8; 7]; 2]
+    pub boards: Vec<Board>,
+    pub hits_left: Vec<[i8; 10]>
 }
 
-fn is_victory (state: State) -> Option<u16> {
+fn is_victory (state: &State) -> Option<u16> {
     for player_idx in 0..2 {
-        let no_ships = true;
-        for ship_idx in 0..7 {
+        let mut no_ships = true;
+        for ship_idx in 0..SHIPS.len() {
             if state.hits_left[player_idx][ship_idx] > 0 {
                 no_ships = false;
                 break;
@@ -62,15 +64,67 @@ fn is_victory (state: State) -> Option<u16> {
             // If this player doesn't have any ships remaining, the other player wins.
             return match player_idx {
                 0 => Some(2),
-                1 => Some(1)
+                1 => Some(1),
+                _ => None
             };
         }
     }
     None
 }
 
-fn random_board (rng: &XorShiftRng) -> Board {
-    [[Tile::Water; 10]; 10]
+fn random_board (rng: &mut ChaChaRng) -> Board {
+    let board = &mut [[Tile::Water; BOARD_SIZE]; BOARD_SIZE];
+    let board_size = BOARD_SIZE as i8;
+
+    // Iterate over the ships by length in descending order.
+    // For each ship, pick a random position/orientation until the placement is valid.
+    // (Valid means the ship is surrounded by water).
+    for ship_id in (0..SHIPS.len()).rev() {
+        let ship_length = SHIPS[ship_id];
+        let ship_id = ship_id as u8;
+        loop {
+            let orientation = rng.gen_bool(0.5);
+            let first: i8 = rng.gen_range(0, board_size - ship_length + 1);
+            let second: i8 = rng.gen_range(0, board_size);
+            if (orientation && first + ship_length > board_size) ||
+               (!orientation && second + ship_length > board_size) {
+               continue;
+            }
+
+            let mut coords: Vec<(u8, u8)> = vec![];
+            for tile in 0..ship_length {
+               let tile = tile as i8;
+               let coord: (i8, i8) = match orientation {
+                   true => (first + tile, second),
+                   _ => (first, second + tile)
+               };
+               let mut valid = true;
+               for x_offset in 0..=2 {
+                   for y_offset in 0..=2 {
+                       let x = coord.0 + x_offset - 1;
+                       let y = coord.1 + y_offset - 1;
+                       valid = valid && ((x < 0 || y < 0) || (x >= board_size || y >= board_size) ||
+                         match board[x as usize][y as usize] {
+                           Tile::Ship(id) if id != ship_id => false,
+                           _ => true
+                       });
+                   }
+               }
+               if valid {
+                   coords.push((coord.0 as u8, coord.1 as u8));
+               }
+            }
+
+            if coords.len() as i8 == ship_length {
+                debug(&format!("FINAL COORDS FOR SHIP ID: {} ARE {:?}", ship_id, coords));
+                for coord in coords.iter() {
+                    board[coord.0 as usize][coord.1 as usize] = Tile::Ship(ship_id);
+                }
+                break;
+            }
+        }
+    }
+    *board
 }
 
 /// Define your moves as methods in this trait.
@@ -78,10 +132,7 @@ fn random_board (rng: &XorShiftRng) -> Board {
 trait Moves {
     fn click_tile(state: &mut UserState<State>, args: &Option<Value>)
                 -> Result<(), Box<Error>> {
-        if let None = args {
-            return Err(Box::new(Errors::InvalidTile));
-        }
-        let value = args.unwrap();
+        let value = args.clone().ok_or_else(|| Box::new(Errors::InvalidTile))?;
 
         let coords: Vec<u64> = value.as_array()
             .and_then(|arr| Some(arr.iter().filter_map(|coord| coord.as_u64())))
@@ -94,17 +145,14 @@ trait Moves {
         }
         let x = coords[0] as usize;
         let y = coords[1] as usize;
-        if x < 0 || x > 9 {
-            return Err(Box::new(Errors::InvalidTile));
-        }
-        if y < 0 || y > 9 {
+        if  x > 9 || y > 9 {
             return Err(Box::new(Errors::InvalidTile));
         }
 
         // The current player is attacking the other player's board.
         let player_idx = !(state.ctx.current_player - 1) as usize;
-        let mut board = &state.g.boards[player_idx];
-        let mut hits_left = &state.g.hits_left[player_idx];
+        let board = &mut state.g.boards[player_idx];
+        let hits_left = &mut state.g.hits_left[player_idx];
 
         match board[x][y] {
             Tile::Water => {
@@ -127,11 +175,17 @@ trait Flow {
     fn initial_state(&self) -> State {
         // Generate random ship placements for each player.
         let seed = self.seed.unwrap();
-        let rng = XorShiftRng::from_seed(seed.to_le_bytes());
-        State {
-            boards: [random_board(&rng), random_board(&rng)],
-            hits_left: [SHIPS, SHIPS]
-        }
+        debug(&format!("SEED IS: {}, bytes are: {:?}", seed, seed.to_le_bytes()));
+        let mut seed_arr = [0 as u8; 32];
+        for (i, byte) in seed.to_le_bytes().iter().enumerate() {
+            seed_arr[i] = *byte
+        };
+        let mut rng = ChaChaRng::from_seed(seed_arr);
+        let ret = State {
+            boards: vec![random_board(&mut rng), random_board(&mut rng)],
+            hits_left: vec![SHIPS, SHIPS]
+        };
+        ret
     }
 
     fn end_turn_if(&self, _: &UserState<State>) -> bool {
@@ -140,12 +194,23 @@ trait Flow {
     }
 
     fn end_game_if(&self, state: &UserState<State>) -> Option<(Option<Score>, Value)> {
-        if let Some(winner) = is_victory(state.g) {
+        if let Some(winner) = is_victory(&state.g) {
             return Some((Some(Score::Win(winner)), json!({
                 "winner": winner,
             })));
         }
         None
+    }
+
+    fn player_filter(&self) -> Option<fn(&State, u16) -> State> {
+        Some(|state, player_id| {
+            // TODO: Finish state filtering.
+            // TODO: Get offline docs for rust
+            State {
+                boards: state.boards.clone(),
+                hits_left: state.hits_left.clone()
+            }
+        })
     }
 }
 

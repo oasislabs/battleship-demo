@@ -7,11 +7,12 @@ authors = ["Andrew Osheroff <andrewosh@gmail.com>"]
 crate-type = ["cdylib"]
 
 [dependencies]
-console_error_panic_hook = "0.1.5"
-
-game-engine = { git = "https://github.com/oasis-game-framework/oasis-game-framework", branch = "1.0.0-alpha" }
-client-proxy = { git = "https://github.com/oasis-game-framework/oasis-game-client-proxy", branch = "1.0.0-alpha" }
+# game-engine = { git = "https://github.com/oasis-game-framework/oasis-game-framework", branch = "1.0.0-alpha" }
+# client-proxy = { git = "https://github.com/oasis-game-framework/oasis-game-client-proxy", branch = "1.0.0-alpha" }
 core = { path = "../game" }
+client-proxy = { path = "/project/oasis-game-client-proxy" }
+game-engine = { path = "/project/oasis-game-framework/engine" }
+
 
 [dependencies.wasm-bindgen]
 version = "0.2.29"

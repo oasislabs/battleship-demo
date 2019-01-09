@@ -9,11 +9,12 @@ serde = "1.0.70"
 serde_json = "1.0.24"
 serde_derive = "1.0.70"
 lazy_static = "1.1.0"
-rand_core = "0.3.0"
-rand_xorshift = "0.1.1"
+rand = "0.5.5"
 
-game-engine = { git = "https://github.com/oasis-game-framework/oasis-game-framework", branch = "1.0.0-alpha" }
-game-engine-derive = { git = "https://github.com/oasis-game-framework/oasis-game-framework", branch = "1.0.0-alpha" }
+# game-engine = { git = "https://github.com/oasis-game-framework/oasis-game-framework", branch = "1.0.0-alpha" }
+# game-engine-derive = { git = "https://github.com/oasis-game-framework/oasis-game-framework", branch = "1.0.0-alpha" }
+game-engine = { path = "/project/oasis-game-framework/engine" }
+game-engine-derive = { path = "/project/oasis-game-framework/engine/derive" }
 
 [lib]
 crate-type = ["lib"]
