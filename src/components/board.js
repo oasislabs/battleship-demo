@@ -22,24 +22,34 @@ class Board extends React.Component {
     isMultiplayer: PropTypes.bool,
   };
 
-  onClick = id => {
-    if (this.isActive(id)) {
-      this.props.moves.click_cell(id)
+  coordsToId (coords) {
+    return coords.join(',')
+  }
+  idToCoords (id) {
+    return id.split(',')
+  }
+
+  onClick (x, y) {
+    if (this.isActive(x, y)) {
+      this.props.moves.click_tile(x, y)
     }
   };
 
-  isActive(id) {
+  isActive (x, y) {
     let ctx = this.props.ctx
     let playerId = this.props.playerID
+    let { other } = this.getBoards(playerId)
+
     let myTurn = playerId && (
       ctx.current_player === playerId ||
       (ctx.active_players && ctx.active_players.indexOf(playerId) !== -1)
     )
-    return myTurn && this.props.G.cells[id] === -1
+
+    return myTurn && other[x][y] === 'Water'
   }
 
   format (cellValue) {
-    if (cellValue === -1) return '';
+    if (cellValue === "Miss") return '';
     return cellValue;
   }
 
@@ -56,51 +66,85 @@ class Board extends React.Component {
       }
       victoryInfo.winner = <div className={color} id="winner">{text}</div>;
       victoryInfo.color = color
-      victoryInfo.cells = new Set(gameover.winning_cells)
       return victoryInfo
     }
     return null
   }
 
-  getCellClass (victoryInfo, id) {
-    let cellClass = this.isActive(id) ? 'active' : ''
-    if (victoryInfo && victoryInfo.cells.has(id)) {
-      cellClass += ` bg-${victoryInfo.color} white`
-    }
+  getCellClass (x, y) {
+    let cellClass = this.isActive(x, y) ? 'active' : ''
     return cellClass
+  }
+
+  getBoards () {
+    switch (this.props.playerID) {
+      case 1: 
+        return { 
+          mine: this.props.G.boards[0],
+          other: this.props.G.boards[1]
+        }
+      case 2: 
+        return {
+          mine: this.props.G.boards[1],
+          other: this.props.G.boards[0]
+        }
+      default:
+        throw new Error('Invalid player')
+    }
+  }
+
+  renderTile (tile) {
+    var color = null
+    if (typeof tile === 'string') {
+      if (tile === 'Miss') {
+        color = 'blue'  
+      }
+    } else {
+      if (tile['Hit'] !== undefined) {
+        color = 'red'
+      } else {
+        color ='gray'
+      }
+    }
+    if (!color) {
+      return ''
+    }
+    return (
+      <svg viewBox="0 0 100 100">
+        <circle cx="50%" cy="50%" fill={color} r="30" />
+      </svg>
+    )
+  }
+
+  renderBoard (board, active) {
+    let tbody = [];
+    for (let i = 0; i < board.length; i++) {
+      let col = board[i];
+      let cells = [];
+      for (let j = 0; j < col.length; j++) {
+        let tile = board[i][j];
+        let id = this.coordsToId([i, j]);
+        cells.push(
+          <td
+            key={id}
+            className={active ? this.getCellClass(i, j) : ''}
+            onClick={() => this.onClick(i, j)}
+          >
+            {this.renderTile(tile)}
+          </td>
+        );
+      }
+      tbody.push(<tr key={i}>{cells}</tr>)
+    }
+    return tbody;
   }
 
   render() {
     let victoryInfo = this.getVictoryInfo() 
-    let tbody = [];
-    for (let i = 0; i < 3; i++) {
-      let cells = [];
+    let { mine, other } = this.getBoards()
 
-      for (let j = 0; j < 3; j++) {
-        const id = 3 * i + j;
-
-        let cellValue = '';
-        switch (this.props.G.cells[id]) {
-            case 1:
-                cellValue = 'X';
-                break;
-            case 2:
-                cellValue = "O";
-                break;
-        }
-
-        cells.push(
-          <td
-            key={id}
-            className={this.getCellClass(victoryInfo, id)}
-            onClick={() => this.onClick(id)}
-          >
-            {cellValue}
-          </td>
-        );
-      }
-      tbody.push(<tr key={i}>{cells}</tr>);
-    }
+    let myBoard = this.renderBoard(mine, false);
+    let otherBoard = this.renderBoard(other, true);
 
     let player = null;
     if (this.props.playerID) {
@@ -109,13 +153,17 @@ class Board extends React.Component {
 
     let rendered = (
       <div className="flex flex-column justify-center items-center">
-        <table id="board">
-          <tbody>{tbody}</tbody>
-        </table>
+        <div className="flex">
+          <table className="board" id="my-board">
+            <tbody>{myBoard}</tbody>
+          </table>
+          <table className="board" id="other-board">
+            <tbody>{otherBoard}</tbody>
+          </table>
+        </div>
         <GameInfo winner={victoryInfo ? victoryInfo.winner : null} {...this.props} />
       </div>
     );
-    console.log('RETURNING RENDERED:', rendered)
     return rendered;
   }
 }

@@ -72,7 +72,7 @@ const Multiplayer = () => {
 
     return (
       <div style={{ padding: 50 }}>
-        <h1>Two Players (On-Chain)</h1>
+        <h1>Battleship</h1>
         <Player />
       </div>
     );

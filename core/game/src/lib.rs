@@ -34,7 +34,7 @@ quick_error! {
 /// State types and enums.
 
 // A ship's ID is its index in this array, and its length is the value at that index.
-static SHIPS: [i8; 10] = [2, 2, 2, 2, 3, 3, 3, 4, 4, 6];
+static SHIPS: [i8; 7] = [2, 2, 2, 3, 3, 4, 5];
 const BOARD_SIZE: usize = 10;
 #[derive(Serialize, Deserialize, Clone, Debug, Copy)]
 pub enum Tile {
@@ -48,7 +48,15 @@ pub type Board = [[Tile; BOARD_SIZE]; BOARD_SIZE];
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct State {
     pub boards: Vec<Board>,
-    pub hits_left: Vec<[i8; 10]>
+    pub hits_left: Vec<[i8; 7]>
+}
+impl Default for State {
+    fn default() -> Self {
+        State {
+            boards: vec![empty_board(), empty_board()],
+            hits_left: vec![SHIPS, SHIPS]
+        }
+    }
 }
 
 fn is_victory (state: &State) -> Option<u16> {
@@ -72,8 +80,12 @@ fn is_victory (state: &State) -> Option<u16> {
     None
 }
 
+fn empty_board() -> Board {
+    [[Tile::Water; BOARD_SIZE]; BOARD_SIZE]
+}
+
 fn random_board (rng: &mut ChaChaRng) -> Board {
-    let board = &mut [[Tile::Water; BOARD_SIZE]; BOARD_SIZE];
+    let board = &mut empty_board();
     let board_size = BOARD_SIZE as i8;
 
     // Iterate over the ships by length in descending order.
@@ -116,7 +128,6 @@ fn random_board (rng: &mut ChaChaRng) -> Board {
             }
 
             if coords.len() as i8 == ship_length {
-                debug(&format!("FINAL COORDS FOR SHIP ID: {} ARE {:?}", ship_id, coords));
                 for coord in coords.iter() {
                     board[coord.0 as usize][coord.1 as usize] = Tile::Ship(ship_id);
                 }
@@ -150,7 +161,11 @@ trait Moves {
         }
 
         // The current player is attacking the other player's board.
-        let player_idx = !(state.ctx.current_player - 1) as usize;
+        let player_idx: usize = match state.ctx.current_player {
+            1 => 1,
+            2 => 0,
+            _ => panic!("Invalid player")
+        };
         let board = &mut state.g.boards[player_idx];
         let hits_left = &mut state.g.hits_left[player_idx];
 
@@ -175,17 +190,15 @@ trait Flow {
     fn initial_state(&self) -> State {
         // Generate random ship placements for each player.
         let seed = self.seed.unwrap();
-        debug(&format!("SEED IS: {}, bytes are: {:?}", seed, seed.to_le_bytes()));
         let mut seed_arr = [0 as u8; 32];
         for (i, byte) in seed.to_le_bytes().iter().enumerate() {
             seed_arr[i] = *byte
         };
         let mut rng = ChaChaRng::from_seed(seed_arr);
-        let ret = State {
+        State {
             boards: vec![random_board(&mut rng), random_board(&mut rng)],
             hits_left: vec![SHIPS, SHIPS]
-        };
-        ret
+        }
     }
 
     fn end_turn_if(&self, _: &UserState<State>) -> bool {
@@ -204,13 +217,40 @@ trait Flow {
 
     fn player_filter(&self) -> Option<fn(&State, u16) -> State> {
         Some(|state, player_id| {
-            // TODO: Finish state filtering.
-            // TODO: Get offline docs for rust
+            let boards = state.boards.iter().enumerate().map(|(idx, board)| {
+                if idx as u16 != (player_id - 1) {
+                    // Remove any Ship values from other players' boards.
+                    let mut filtered_board: Board = empty_board();
+                    for x in 0..BOARD_SIZE {
+                        for y in 0..BOARD_SIZE {
+                            let tile = board[x][y];
+                            if let Tile::Ship(ship_id) = tile {
+                                filtered_board[x][y] = Tile::Water
+                            } else {
+                                filtered_board[x][y] = tile
+                            }
+                        }
+                    }
+                    return filtered_board;
+                }
+                board.clone()
+            }).collect::<Vec<Board>>();
+            let hits_left = state.hits_left.iter().enumerate().filter_map(|(idx, hits)| {
+                if idx as u16 == (player_id - 1) {
+                    return Some(*hits)
+                }
+                None
+            }).collect::<Vec<[i8; 7]>>();
             State {
-                boards: state.boards.clone(),
-                hits_left: state.hits_left.clone()
+                boards,
+                hits_left
             }
         })
+    }
+
+    fn optimistic_update(&self, state: &UserState<State>, _: &Move) -> bool {
+        // Since this game involves random state, we cannot do any optimistic updating.
+        false
     }
 }
 

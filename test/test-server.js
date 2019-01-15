@@ -1,3 +1,4 @@
+const _ = require('lodash')
 const Web3 = require('web3')
 const Web3c = require('web3c')
 const minimist = require('minimist')
@@ -19,6 +20,27 @@ async function delay (ms) {
   })
 }
 
+async function alternateMoves(games, boardSize) {
+  for (let x = 0; x < boardSize; x++) {
+    for (let y = 0; y < boardSize; y++) {
+      for (let { game, player } of games) {
+        console.log(`Clicking tile (${x},${y}) for Player ${player}`)
+         await game.sendAction({
+          MakeMove: {
+            move_type: 'click_tile',
+            player_id: player,
+            args: [x, y]
+          }
+         })
+        let state = await game.getLastState()
+        let gameover = state.ctx.gameover
+        console.log('state.g:', JSON.stringify(state.g))
+        if (gameover) return gameover
+      }
+    }
+  }
+}
+
 contract('GameServerContract', async (accounts) => {
 
   it('should create a new game', async () => {
@@ -26,7 +48,7 @@ contract('GameServerContract', async (accounts) => {
       web3c,
       eventsWeb3c,
       account: 0,
-      confidential: false
+      confidential: true
     })
     let game = await server.createGame([
       {
@@ -43,24 +65,23 @@ contract('GameServerContract', async (accounts) => {
     await game.ready()
 
     let players = await game.getRegisteredPlayers()
-    console.log('INITIAL STATE:', JSON.stringify(game._lastState.g))
 
     assert.deepEqual(players[accounts[0].toLowerCase()], [1])
     assert.deepEqual(players[accounts[1].toLowerCase()], [2])
   })
 
-  it.skip('should complete a game', async () => {
+  it('should complete a game', async () => {
     let server1 = new GameServer(GameServerContract.address, {
       web3c,
       eventsWeb3c,
       account: 0,
-      confidential: false
+      confidential: true
     })
     let server2 = new GameServer(GameServerContract.address, {
       web3c,
       eventsWeb3c,
       account: 1,
-      confidential: false
+      confidential: true
     })
 
     let game1 = await server1.createGame([
@@ -77,69 +98,16 @@ contract('GameServerContract', async (accounts) => {
 
     let game2 = new Game(server2, game1.id)
 
+
     // Alternate moves until victory.
-    await game1.sendAction({
-      MakeMove: {
-        move_type: 'click_slot',
-        player_id: 1,
-        args: [0]
-      }
-    })
+    let gameover = await alternateMoves([{
+      game: game1,
+      player: 1,
+    }, {
+      game: game2,
+      player: 2
+    }], 10)
 
-    await game2.sendAction({
-      MakeMove: {
-        move_type: 'click_slot',
-        player_id: 2,
-        args: [1]
-      }
-    })
-
-    await game1.sendAction({
-      MakeMove: {
-        move_type: 'click_slot',
-        player_id: 1,
-        args: [0]
-      }
-    })
-
-    await game2.sendAction({
-      MakeMove: {
-        move_type: 'click_slot',
-        player_id: 2,
-        args: [1]
-      }
-    })
-
-    await game1.sendAction({
-      MakeMove: {
-        move_type: 'click_slot',
-        player_id: 1,
-        args: [0]
-      }
-    })
-
-    await game2.sendAction({
-      MakeMove: {
-        move_type: 'click_slot',
-        player_id: 2,
-        args: [1]
-      }
-    })
-
-    await game1.sendAction({
-      MakeMove: {
-        move_type: 'click_slot',
-        player_id: 1,
-        args: [0]
-      }
-    })
-
-    await delay(200)
-
-    let state1 = game1.getLastState()
-    let state2 = game2.getLastState()
-
-    assert.ok(state1.ctx.gameover)
-    assert.ok(state2.ctx.gameover)
+    assert.ok(gameover)
   })
 })
