@@ -5,7 +5,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin')
 const truffleConfig = require('./truffle-config.js')
 const pages = fs.readdirSync('./src/pages').filter(name => !name.startsWith('.'))
 
-module.exports = function (web3, network, artifacts) {
+module.exports = function (web3, network, artifacts, confidential) {
   let networkConfig = truffleConfig.config[network]
 
   let contract = artifacts.require('GameServerContract')
@@ -50,7 +50,8 @@ module.exports = function (web3, network, artifacts) {
     plugins: [
       new webpack.DefinePlugin({
         'CONTRACT_ADDRESS': JSON.stringify(contract.address),
-        'WS_ENDPOINT': JSON.stringify(networkConfig.wsEndpoint)
+        'WS_ENDPOINT': JSON.stringify(networkConfig.wsEndpoint),
+	'CONFIDENTIAL_CONTRACT': confidential
       }),
       new webpack.HotModuleReplacementPlugin(),
       ...pages.map(page => new HtmlWebpackPlugin({

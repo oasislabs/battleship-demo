@@ -224,11 +224,17 @@ trait Flow {
                     for x in 0..BOARD_SIZE {
                         for y in 0..BOARD_SIZE {
                             let tile = board[x][y];
-                            if let Tile::Ship(ship_id) = tile {
-                                filtered_board[x][y] = Tile::Water
-                            } else {
-                                filtered_board[x][y] = tile
-                            }
+                            let cell_value = match tile {
+                                Tile::Ship(ship_id) => Tile::Water,
+                                Tile::Hit(ship_id) => {
+                                    match state.hits_left[idx][ship_id as usize] {
+                                        0 => Tile::Ship(ship_id),
+                                        _ => Tile::Hit(ship_id)
+                                    }
+                                },
+                                _ => tile
+                            };
+                            filtered_board[x][y] = cell_value;
                         }
                     }
                     return filtered_board;

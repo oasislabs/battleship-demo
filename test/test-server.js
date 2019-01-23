@@ -8,9 +8,12 @@ const GameServerContract = artifacts.require('GameServerContract')
 const web3c = new Web3c(GameServerContract.web3.currentProvider)
 
 const truffleConfig = require('../truffle-config.js')
-let args = minimist(process.argv.slice(2))
+let args = minimist(process.argv.slice(2), {
+  boolean: ['confidential']
+})
 let networkConfig = truffleConfig.config[args.network || 'development']
 let eventsWeb3c = new Web3c(new Web3.providers.WebsocketProvider(networkConfig.wsEndpoint))
+let confidential = (args.confidential !== undefined) ? args.confidential : true
 
 async function delay (ms) {
   return new Promise((resolve, reject) => {
@@ -34,7 +37,6 @@ async function alternateMoves(games, boardSize) {
          })
         let state = await game.getLastState()
         let gameover = state.ctx.gameover
-        console.log('state.g:', JSON.stringify(state.g))
         if (gameover) return gameover
       }
     }
@@ -43,12 +45,12 @@ async function alternateMoves(games, boardSize) {
 
 contract('GameServerContract', async (accounts) => {
 
-  it('should create a new game', async () => {
+  it.skip('should create a new game', async () => {
     let server = new GameServer(GameServerContract.address, {
       web3c,
       eventsWeb3c,
       account: 0,
-      confidential: true
+      confidential
     })
     let game = await server.createGame([
       {
@@ -59,15 +61,15 @@ contract('GameServerContract', async (accounts) => {
         address: accounts[1],
         is_bot: false
       }
-    ], 1000)
+    ])
 
     assert.equal(game.id, 1)
     await game.ready()
 
     let players = await game.getRegisteredPlayers()
 
-    assert.deepEqual(players[accounts[0].toLowerCase()], [1])
-    assert.deepEqual(players[accounts[1].toLowerCase()], [2])
+    assert.deepEqual(players[accounts[0].toLowerCase()].map(p => p.id), [1])
+    assert.deepEqual(players[accounts[1].toLowerCase()].map(p => p.id), [2])
   })
 
   it('should complete a game', async () => {
@@ -75,13 +77,13 @@ contract('GameServerContract', async (accounts) => {
       web3c,
       eventsWeb3c,
       account: 0,
-      confidential: true
+      confidential
     })
     let server2 = new GameServer(GameServerContract.address, {
       web3c,
       eventsWeb3c,
       account: 1,
-      confidential: true
+      confidential
     })
 
     let game1 = await server1.createGame([
@@ -93,11 +95,13 @@ contract('GameServerContract', async (accounts) => {
         address: accounts[1],
         is_bot: false
       }
-    ], 1000)
+    ])
     await game1.ready()
 
     let game2 = new Game(server2, game1.id)
 
+    await game1.sendReady()
+    await game2.sendReady()
 
     // Alternate moves until victory.
     let gameover = await alternateMoves([{
