@@ -34,7 +34,6 @@ const Singleplayer = () => {
       // This simplifies local testing.
       let tee = (function (d1, d2) {
         return (action) => {
-	  console.log('DISPATCHING:', action)
           d1(action);
           d2(action);
         }
@@ -49,7 +48,7 @@ const Singleplayer = () => {
         playerId: 1,
         players: [1, 2],
         multiplayer: null,
-        debug: true
+        debug: false
       });
 
       let PlayerTwo = Client({

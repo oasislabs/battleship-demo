@@ -51,7 +51,7 @@ module.exports = function (web3, network, artifacts, confidential) {
       new webpack.DefinePlugin({
         'CONTRACT_ADDRESS': JSON.stringify(contract.address),
         'WS_ENDPOINT': JSON.stringify(networkConfig.wsEndpoint),
-	'CONFIDENTIAL_CONTRACT': confidential
+        'CONFIDENTIAL_CONTRACT': confidential
       }),
       new webpack.HotModuleReplacementPlugin(),
       ...pages.map(page => new HtmlWebpackPlugin({
