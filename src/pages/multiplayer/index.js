@@ -6,7 +6,6 @@
  * https://opensource.org/licenses/MIT.
  */
 
-// React-specific imports
 import Async from 'react-promise';
 import React from 'react';
 import { render } from 'react-dom';
@@ -22,6 +21,7 @@ import Web3 from 'web3';
 
 // Game component imports.
 import Board from '../../components/board';
+import Logo from '../../assets/logo.svg';
 
 const Multiplayer = () => {
   // TODO: Better way to get game parameters.
@@ -70,12 +70,16 @@ const Multiplayer = () => {
       playerId,
       players: [1, 2],
       multiplayer: game,
-      debug: true
+      debug: false
     });
 
     return (
-      <div style={{ padding: 50 }}>
-        <h1>Battleship</h1>
+      <div className="code bg-light-gray" style={{ padding: 50 }}>
+        <h1 className="f1 lh-title mb1">Battleship</h1>
+        <div class="flex justify-center">
+          <h4 className="pt0 mt3">with</h4>
+          <mg className="h2 w-20" src={Logo} />
+        </div>
         <Player />
       </div>
     );
