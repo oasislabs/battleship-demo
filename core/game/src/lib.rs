@@ -241,11 +241,11 @@ trait Flow {
                 }
                 board.clone()
             }).collect::<Vec<Board>>();
-            let hits_left = state.hits_left.iter().enumerate().filter_map(|(idx, hits)| {
+            let hits_left = state.hits_left.iter().enumerate().map(|(idx, hits)| {
                 if idx as u16 == (player_id - 1) {
-                    return Some(*hits)
+                    return *hits
                 }
-                None
+                return [0; 7];
             }).collect::<Vec<[i8; 7]>>();
             State {
                 boards,
