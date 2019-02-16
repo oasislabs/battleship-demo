@@ -30,5 +30,6 @@ features = ["std"]
 max-mem = 6108864
 
 [profile.release]
-opt-level = 'z'
 lto = true
+opt-level = 'z'
+incremental = false

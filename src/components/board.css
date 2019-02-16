@@ -31,7 +31,7 @@ td {
 
 td.active {
   cursor: pointer;
-  background: #eeffe9;
+  background: #d4ecc8;
 }
 
 td.active:hover {

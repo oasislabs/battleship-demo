@@ -189,7 +189,7 @@ trait Moves {
 trait Flow {
     fn initial_state(&self) -> State {
         // Generate random ship placements for each player.
-        let seed = self.seed.unwrap();
+        let seed = unsafe { get_seed() };
         let mut seed_arr = [0 as u8; 32];
         for (i, byte) in seed.to_le_bytes().iter().enumerate() {
             seed_arr[i] = *byte
