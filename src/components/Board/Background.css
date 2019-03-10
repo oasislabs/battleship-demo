@@ -1,0 +1,18 @@
+.Background {
+  width: 1120px;
+  height: 512px;
+  background-image: url('../../assets/2x/battleship_board_10x10.png');
+  background-size: cover;
+}
+
+.Background__left .Grid {
+  margin-left: 40px;
+}
+
+.Background__right .Grid {
+  margin-left: 80px;
+}
+
+.Divider {
+  width: 30px;
+}

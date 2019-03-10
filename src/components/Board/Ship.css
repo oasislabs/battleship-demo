@@ -1,0 +1,15 @@
+.Ship {
+  position: relative;
+  z-index: 1;
+  width: 48px;
+}
+
+.Ship__vertical {
+  bottom: 49px;
+}
+
+.Ship__horizontal {
+  transform-origin: top left;
+  transform: rotate(-90deg) translate(-40px, 0px);
+  bottom: 40px;
+}

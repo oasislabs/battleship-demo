@@ -1,0 +1,14 @@
+.Tile {
+  height: 100%;
+  width: 100%;
+  position: relative;
+  z-index: 2;
+}
+
+.Tile__clickable {
+  cursor: pointer;
+}
+
+.Tile__clickable:hover {
+  background: rgba(0, 0, 0, 0.1);
+}

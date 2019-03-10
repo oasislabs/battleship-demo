@@ -8,10 +8,17 @@ crate-type = ["cdylib"]
 
 [dependencies]
 console_error_panic_hook = "0.1.5"
-game-engine = { git = "https://github.com/oasis-game-framework/oasis-game-framework", branch = "1.0.0-alpha" }
-client-proxy = { git = "https://github.com/oasis-game-framework/oasis-game-client-proxy", branch = "1.0.0-alpha" }
+# game-engine = { git = "https://github.com/oasis-game-framework/oasis-game-framework", branch = "1.0.0-alpha" }
+game-engine = { path = "/project/oasis-game-framework/engine" }
+# client-proxy = { git = "https://github.com/oasis-game-framework/oasis-game-client-proxy", branch = "1.0.0-alpha" }
+client-proxy = { path = "/project/oasis-game-client-proxy" }
 core = { path = "../game" }
 
 [dependencies.wasm-bindgen]
-version = "= 0.2.33"
+version = "= 0.2.37"
 features = ["serde-serialize"]
+
+[profile.release]
+opt-level = 'z'
+incremental = false
+lto = true

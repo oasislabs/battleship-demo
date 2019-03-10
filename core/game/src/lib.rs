@@ -141,7 +141,7 @@ fn random_board (rng: &mut ChaChaRng) -> Board {
 /// Define your moves as methods in this trait.
 #[moves]
 trait Moves {
-    fn click_tile(state: &mut UserState<State>, args: &Option<Value>)
+    fn click_tile(state: &mut UserState<State>, player_id: u16, args: &Option<Value>)
                 -> Result<(), Box<Error>> {
         let value = args.clone().ok_or_else(|| Box::new(Errors::InvalidTile))?;
 
@@ -187,11 +187,10 @@ trait Moves {
 /// Define the game flow.
 #[flow]
 trait Flow {
-    fn initial_state(&self) -> State {
+    fn initial_state(&self, seed: Option<u128>) -> State {
         // Generate random ship placements for each player.
-        let seed = unsafe { get_seed() };
         let mut seed_arr = [0 as u8; 32];
-        for (i, byte) in seed.to_le_bytes().iter().enumerate() {
+        for (i, byte) in seed.unwrap().to_le_bytes().iter().enumerate() {
             seed_arr[i] = *byte
         };
         let mut rng = ChaChaRng::from_seed(seed_arr);

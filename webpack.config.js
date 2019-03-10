@@ -35,21 +35,16 @@ module.exports = function (web3, network, artifacts, confidential) {
           use: [ 'style-loader', 'css-loader' ]
         },
         {
-          test: /\.(png|svg|jpg|gif)$/,
-          use: [
-           'file-loader'
-          ]
+         test: /\.(svg|png|jpg|gif)$/,
+         use: [
+           {
+             loader: 'file-loader',
+             options: {
+               name: '[name].[ext]'
+             }
+           }
+         ]
         }
-	      /*
-        {
-	  test: /\.wasm$/,
-	  type: "javascript/auto",
-	  loader: "file-loader",
-	  options: {
-	    publicPath: "dist/"
-	  }
-        }
-	*/
       ]
     },
     resolve: {
@@ -62,7 +57,7 @@ module.exports = function (web3, network, artifacts, confidential) {
     },
     plugins: [
       new webpack.DefinePlugin({
-        'CONTRACT_ADDRESS': JSON.stringify(address || ''),
+        'CONTRACT_ADDRESS':  JSON.stringify(address || ''),
         'WS_ENDPOINT': JSON.stringify(networkConfig.wsEndpoint),
         'CONFIDENTIAL_CONTRACT': confidential
       }),
@@ -77,6 +72,11 @@ module.exports = function (web3, network, artifacts, confidential) {
       }),
       new HtmlWebpackPlugin({
         title: 'Oasis Game'
+      }),
+      new webpack.NormalModuleReplacementPlugin(/env/, function(resource) {
+	if (resource.request === 'env') {
+	  resource.request = '../wasm32-shim'
+	}
       })
     ],
     devtool: 'cheap-eval-source-map',

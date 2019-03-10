@@ -1,0 +1,29 @@
+.Notification {
+  z-index: 4;
+  position: absolute;
+  visibility: hidden;
+  opacity: 0;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: auto;
+  padding: 1rem;
+  margin: 0;
+  color: #fafafa;
+  border-radius: 5px;
+  background: #212121;
+  box-sizing: border-box;
+  box-shadow: 0 0 1px 1px rgba(10, 10, 11, .125);
+}
+
+.Notification--fadeIn {
+  visibility: visible;
+  opacity: 1;
+  transition: visibility 0s, linear 0s, opacity 0ms;
+}
+
+.Notification--fadeOut {
+  visibility: hidden;
+  opacity: 0;
+  transition: visibility 0s, linear 300ms, opacity 300ms;
+}
