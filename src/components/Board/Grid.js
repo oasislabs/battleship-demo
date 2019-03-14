@@ -16,20 +16,24 @@ class Grid extends React.Component {
       const [x,y] = state.lastClickedTile.split(',');
       const tile = props.board[x][y];
 
-      let result = 'Miss!';
-      if (typeof tile === 'object') {
+      let result = null;
+      if (typeof tile === 'object' || tile === 'Miss') {
         if (typeof tile['Hit'] === 'number') {
           result = 'Hit!'
         } else if (typeof tile['Ship'] === 'number') {
           result = 'Sunk!'
+        } else {
+          result = 'Miss!'
+        }
+        return {
+          lastClickedTile: null,
+          lastClickedTileResult: result
         }
       }
 
-      return {
-        lastClickedTile: null,
-        lastClickedTileResult: result,
-      }
+      return state;
     }
+
     return state;
   }
 

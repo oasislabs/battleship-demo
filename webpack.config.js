@@ -52,7 +52,7 @@ module.exports = function (web3, network, artifacts, confidential) {
     },
     output: {
       path: __dirname + '/dist',
-      publicPath: '/',
+      publicPath: './',
       filename: '[name].bundle.js'
     },
     plugins: [

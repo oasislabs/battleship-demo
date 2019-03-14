@@ -9,14 +9,14 @@ extern crate quick_error;
 
 extern crate rand;
 
-extern crate game_engine;
+extern crate oasis_game_core;
 #[macro_use]
-extern crate game_engine_derive;
+extern crate oasis_game_core_derive;
 
 use serde_json::Value;
 use std::error::Error;
-use game_engine::{*, Game as InnerGame};
-use game_engine_derive::{flow, moves};
+use oasis_game_core::{*, Game as InnerGame};
+use oasis_game_core_derive::{flow, moves};
 use rand::{Rng, SeedableRng, ChaChaRng};
 
 /// Error types.

@@ -1,8 +1,8 @@
 extern crate core;
-extern crate game_contract;
+extern crate oasis_game_contract;
 
 use core::Game;
-use game_contract::gameserver::*;
+use oasis_game_contract::gameserver::*;
 
 use owasm_std::logger::debug;
 

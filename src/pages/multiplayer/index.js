@@ -64,11 +64,12 @@ class Multiplayer extends React.Component {
   }
 
   async componentDidMount () {
-    let splitUrl = window.location.pathname.split('/')
-    let gameId = +splitUrl[2]
+    let params = new URLSearchParams(document.location.search.substring(1)) 
+    let gameId = params.get('gameId')
+    let rawToken = params.get('token')
 
-    if (splitUrl[3]) {
-      var tokenInfo = codecs('json').decode(Buffer.from(splitUrl[3], 'base64'))
+    if (rawToken) {
+      var tokenInfo = codecs('json').decode(Buffer.from(rawToken, 'base64'))
       var newPrivateKey = tokenInfo.privateKey
       var token = Buffer.from(tokenInfo.token, 'base64')
     }
@@ -106,7 +107,7 @@ class Multiplayer extends React.Component {
     let account = server.getAccount()
     await web3c.eth.getBalance(account.address)
 
-    return new Game(server, gameId)
+    return new Game(server, gameId, 13000000)
   }
 
   async createProxy (game) {
@@ -138,7 +139,7 @@ class Multiplayer extends React.Component {
       );
     }
 
-    let wallet = this.state.web3c ? <WalletManagerView web3c={this.state.web3c} metamask={web3} /> : ''
+    let wallet = this.state.web3c ? <WalletManagerView web3c={this.state.web3c} metamask={window.web3} /> : ''
 
     return (
       <div class="code flex flex-column w-100 h-100 items-center">
