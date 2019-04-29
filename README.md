@@ -7,3 +7,20 @@ Once you're familiar with the basics, this project demonstrates how to create an
 
 In [Battleship](https://en.wikipedia.org/wiki/Battleship_(game)), each player's ship placement needs to be kept secret.
 
+## Installation
+This game is designed to be used from within your Contract Kit container. If you haven't already, pull the `oasislabs/contract-kit` image from Docker Hub.
+
+1. Launch your Contract Kit container: 
+   * `docker run -v "$PWD":/project -p8545:8545 -p8546:8546 -p8080:8080 -it oasislabs/contract-kit:latest /bin/bash`
+   
+The remaining steps are meant to be run in a shell inside your new `oasislabs/contract-kit` container.
+1. Install `wasm-bindgen`: `cargo install wasm-bindgen-cli --vers=0.2.37` (this can take some time).
+2. Clone this repository: `git clone https://github.com/oasislabs/battleship-demo`
+3. NPM installation: `cd battleship-demo && npm i`
+
+### Specifying credentials
+If you want to deploy on Oasis, make sure your mnemonic is defined in `secrets.json`. This file is not tracked by your repo, but it's imported by Truffle during migration and frontend compilation. The default Contract Kit mnemonic is already there, ready to use.
+
+## Building + Migrating
+
+Please refer to our most up to date documentation in the [Oasis Game Box](https://github.com/oasislabs/game-box#building--migrating) repository. 
