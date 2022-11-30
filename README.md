@@ -1,5 +1,5 @@
 # Battleship: An Oasis Game with Secret State
-This example game was made using the [Oasis game box](https://github.com/oasis-game-framework/game-box). If you're unfamiliar with the framework, it's best to first take a look at the following, simpler examples:
+This example game was made using the [Oasis Game Box](https://github.com/oasislabs/game-box). If you're unfamiliar with the framework, it's best to first take a look at the following, simpler examples:
 * [Tic Tac Toe](https://github.com/oasislabs/game-box): This Truffle box gives a more detailed overview of the game project, and describes how to get started with your own game.
 * [Connect Four](https://github.com/oasislabs/connect-four-demo): This repository provides an example of how the game framework's Truffle box can be extended into a (slightly) more sophisticated game.
 
